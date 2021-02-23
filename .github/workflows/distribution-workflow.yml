@@ -70,5 +70,5 @@ jobs:
           automatic_release_tag: "latest"
           prerelease: false
           files: |
-            dist/
+            dist/*
             LICENSE
