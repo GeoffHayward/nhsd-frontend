@@ -64,7 +64,12 @@ jobs:
         run: npm run dist:build:prod
 
       - name: Build project # This would actually build your project, using zip for an example artifact
-        run: zip dist.zip dist/
+        run: |
+          ls -a
+          zip dist.zip dist/
+          ls -a
+          cd dist/
+          ls -a
 
 
 
