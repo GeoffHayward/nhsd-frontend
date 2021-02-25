@@ -60,18 +60,14 @@ jobs:
       #
       # Step 4
       #
-      - name: Build Distribution
+      - name: Build CDN Distribution
         run: npm run dist:build:prod
 
-      - name: Build project # This would actually build your project, using zip for an example artifact
+      - name: Zip CDN Distribution
         run: |
-          ls -a
-          zip dist.zip dist/
-          ls -a
+          zip  cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip LICENSE
           cd dist/
-          ls -a
-
-
+          zip -ur ../cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip images/ scripts/ static/ stylesheets/
 
       - name: Bump version and push tag
         id: tag_version
@@ -90,13 +86,15 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
+
+
+      - name: Upload CDN Dist Zip
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./dist.zip
-          asset_name: storybook.zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./cdn-dist.zip
+          asset_name: cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
