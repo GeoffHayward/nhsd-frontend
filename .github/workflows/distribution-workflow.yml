@@ -65,9 +65,9 @@ jobs:
 
       - name: Zip CDN Distribution
         run: |
-          zip  cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip LICENSE
+          zip  cdn-dist.zip LICENSE
           cd dist/
-          zip -ur ../cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip images/ scripts/ static/ stylesheets/
+          zip -ur ../cdn-dist.zip images/ scripts/ static/ stylesheets/
 
       - name: Bump version and push tag
         id: tag_version
