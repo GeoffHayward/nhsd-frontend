@@ -307,7 +307,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path:  ${{steps.download.outputs.download-path}}/storybook.zip
-          asset_name: storybook-build-${{ steps.tag_version.outputs.new_tag }}.zip
+          asset_name: storybook-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
       - name: Upload NPM Package Zip
         uses: actions/upload-release-asset@v1
@@ -316,5 +316,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path:  ${{steps.download.outputs.download-path}}/npm-dist.zip
-          asset_name: storybook-build-${{ steps.tag_version.outputs.new_tag }}.zip
+          asset_name: npm-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
