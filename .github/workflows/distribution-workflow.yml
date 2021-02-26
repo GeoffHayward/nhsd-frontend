@@ -182,6 +182,7 @@ jobs:
           name: cdn-dist
       - name: Zip CDN distribution
         run: |
+          ls -a
           cd cdn-dist/
           zip -r ../cdn-dist.zip .
 
