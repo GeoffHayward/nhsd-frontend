@@ -8,7 +8,7 @@ on:
 jobs:
 
   build_dist:
-    name: "Build dist folder"
+    name: "Build CDN Distribution"
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -63,7 +63,7 @@ jobs:
       #
       # Step 4
       #
-      - name: Build CDN Distribution
+      - name: Build dist folder
         run: npm run dist:build:prod
 
       #
@@ -82,7 +82,7 @@ jobs:
 
 
   build_storybook:
-    name: "Build Storybook"
+    name: "Build Storybook Distribution"
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -182,8 +182,8 @@ jobs:
           name: cdn-dist
       - name: Zip CDN distribution
         run: |
-          cd dist/
-          zip -r ../cdn-dist.zip images/ scripts/ static/ stylesheets/
+          cd cdn-dist/
+          zip -r ../cdn-dist.zip .
 
 
       #
@@ -196,9 +196,8 @@ jobs:
           name: storybook-dist
       - name: Zip storybook distribution
         run: |
-          zip  storybook.zip LICENSE
-          cd storybook-static/
-          zip -ru ../storybook.zip .
+          cd storybook-dist/
+          zip -r ../storybook.zip .
 
 
 
