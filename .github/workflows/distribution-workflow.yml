@@ -152,6 +152,75 @@ jobs:
             storybook-static/
 
 
+  build_npm_package:
+    name: "Build NPM Distribution"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
+      #
+      # Step 1
+      # Set up job (Storybook)
+      #
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Request Node Version
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.6.0'
+
+      #
+      # Step 2
+      # Set up cache (NPM package)
+      #
+      - name: Get cache key helper values
+        uses: actions/github-script@v3
+        id: cache-key-helper
+        with:
+          result-encoding: string
+          script: |
+            return JSON.stringify({
+              "year" : new Date().getFullYear(),
+              "rotation" : new Date().getTimezoneOffset()
+            })
+      - name: Setup cache (Node.js packages)
+        uses: actions/cache@v2
+        env:
+          YEAR: ${{ fromJSON(steps.cache-key-helper.outputs.result).year }}
+          ROTATION: ${{ fromJSON(steps.cache-key-helper.outputs.result).rotation }}
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-nhs-digital-npm-${{ env.YEAR }}-${{ env.ROTATION }}
+          restore-keys: |
+            ${{ runner.os }}-nhs-digital-npm-${{ env.YEAR }}-
+            ${{ runner.os }}-nhs-digital-npm-
+
+
+      #
+      # Step 3
+      # Install NPM packages (NPM package)
+      #
+      - name: Initialise NPM
+        run: npm i
+
+      #
+      # Step 4
+      #
+      - name: Build NPM
+        run: npm run package:build:prod
+
+      #
+      # Step 5
+      # Store artifacts for next job
+      #
+      - name: Archive NPM package artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: npm-dist
+          path: |
+            package/
 
 
   tag_and_release:
@@ -195,7 +264,9 @@ jobs:
       # Step 5
       # Zip NPM package
       #
-
+      - name: Zip NPM package distribution
+        run: zip -r ../npm-dist.zip .
+        working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
       #
       # Step 6
@@ -228,7 +299,6 @@ jobs:
           asset_path:  ${{steps.download.outputs.download-path}}/cdn-dist.zip
           asset_name: cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
-
       - name: Upload Storybook Zip
         uses: actions/upload-release-asset@v1
         env:
@@ -236,5 +306,14 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path:  ${{steps.download.outputs.download-path}}/storybook.zip
+          asset_name: storybook-build-${{ steps.tag_version.outputs.new_tag }}.zip
+          asset_content_type: application/zip
+      - name: Upload NPM Package Zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path:  ${{steps.download.outputs.download-path}}/npm-dist.zip
           asset_name: storybook-build-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
