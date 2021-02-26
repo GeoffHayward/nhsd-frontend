@@ -228,6 +228,7 @@ jobs:
     needs:
       - build_dist
       - build_storybook
+      - build_npm_package
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
