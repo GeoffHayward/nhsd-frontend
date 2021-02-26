@@ -67,16 +67,6 @@ jobs:
         run: npm run dist:build:prod
 
       #
-      # Step 5
-      #
-      - name: Zip CDN Distribution
-        run: |
-          zip  cdn-dist.zip LICENSE
-          cd dist/
-          zip -ru ../cdn-dist.zip images/ scripts/ static/ stylesheets/
-
-
-      #
       # Step 6
       # Store artifacts for next job
       #
@@ -151,28 +141,24 @@ jobs:
           run: npm run storybook:build
 
       #
-      # Step 5
-      #
-      - name: Zip Storybook
-        run: |
-          zip  storybook.zip LICENSE
-          cd storybook-static/
-          zip -ru ../storybook.zip .
-
-
-      #
       # Step 6
       # Store artifacts for next job
       #
       - name: Archive storybook artifact
         uses: actions/upload-artifact@v2
         with:
-          name: cdn-dist
+          name: storybook-dist
           path: |
             storybook-static/
 
-  tag:
-    name: "Verify that Storybook builds correctly"
+
+
+
+  tag_and_release:
+    name: "Create GitHub Release"
+    needs:
+      - build_dist
+      - build_storybook
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -185,60 +171,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Request Node Version
-        uses: actions/setup-node@v2
-        with:
-          node-version: '12.6.0'
 
       #
       # Step 2
-      # Cache Management
+      # Fetch and zip dist
       #
-      - name: Get cache key helper values
-        uses: actions/github-script@v3
-        id: cache-key-helper
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v2
         with:
-          result-encoding: string
-          script: |
-            return JSON.stringify({
-              "year" : new Date().getFullYear(),
-              "rotation" : new Date().getTimezoneOffset()
-            })
-      - name: Setup cache (Node.js packages)
-        uses: actions/cache@v2
-        env:
-          YEAR: ${{ fromJSON(steps.cache-key-helper.outputs.result).year }}
-          ROTATION: ${{ fromJSON(steps.cache-key-helper.outputs.result).rotation }}
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-nhs-digital-distribution-${{ env.YEAR }}-${{ env.ROTATION }}
-          restore-keys: |
-            ${{ runner.os }}-nhs-digital-distribution-${{ env.YEAR }}-
-            ${{ runner.os }}-nhs-digital-distribution-
+          name: cdn-dist
+      - name: Zip CDN distribution
+        run: |
+          cd dist/
+          zip -r ../cdn-dist.zip images/ scripts/ static/ stylesheets/
+
 
       #
       # Step 3
+      # Fetch and zip storybook
       #
-      - name: Initialise NPM
-        run: npm i
-
-      #
-      # Step 4
-      #
-      - name: Build CDN Distribution
-        run: npm run dist:build:prod
-
-      - name: Zip CDN Distribution
-        run: |
-          zip  cdn-dist.zip LICENSE
-          cd dist/
-          zip -ru ../cdn-dist.zip images/ scripts/ static/ stylesheets/
-
-
-      - name: Build CDN Distribution
-        run: npm run storybook:build
-
-      - name: Zip CDN Distribution
+      - name: Download Storybook artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: storybook-dist
+      - name: Zip storybook distribution
         run: |
           zip  storybook.zip LICENSE
           cd storybook-static/
@@ -246,13 +202,25 @@ jobs:
 
 
 
-      - name: Bump version and push tag
+      #
+      # Step 4
+      # Fetch and zip NPM package
+      #
+
+
+      #
+      # Step 5
+      # Create Release
+      # - Bumps version
+      # - Adds version release tag
+      # - Adds dist, storybook and package to the release
+      #
+      - name: Version bump
         id: tag_version
         uses: mathieudutour/github-tag-action@v5.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: minor
-
       - uses: actions/create-release@v1
         id: create_release
         env:
@@ -262,9 +230,6 @@ jobs:
           release_name: Release ${{ steps.tag_version.outputs.new_tag }}
           draft: false
           prerelease: false
-
-
-
       - name: Upload CDN Dist Zip
         uses: actions/upload-release-asset@v1
         env:
@@ -274,8 +239,7 @@ jobs:
           asset_path: ./cdn-dist.zip
           asset_name: cdn-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
-
-      - name: Upload Story book zip
+      - name: Upload Storybook Zip
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
