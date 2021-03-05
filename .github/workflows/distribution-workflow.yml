@@ -234,10 +234,8 @@ jobs:
 
     steps:
 
-
-
       #
-      # Step 2
+      # Step 1
       #
       - name: Download all workflow artifacts
         uses: actions/download-artifact@v2
@@ -246,7 +244,7 @@ jobs:
           path: workflow-artifacts
 
       #
-      # Step 3
+      # Step 2
       #
       - name: Zip CDN distribution
         run: zip -r ../cdn-dist.zip .
@@ -254,7 +252,7 @@ jobs:
 
 
       #
-      # Step 4
+      # Step 3
       #
       - name: Zip storybook distribution
         run: zip -r ../storybook.zip .
@@ -262,7 +260,7 @@ jobs:
 
 
       #
-      # Step 5
+      # Step 4
       # Zip NPM package
       #
       - name: Zip NPM package distribution
@@ -270,7 +268,7 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
       #
-      # Step 6
+      # Step 5
       # Create Release
       # - Bumps version
       # - Adds version release tag
@@ -318,3 +316,36 @@ jobs:
           asset_path:  ${{steps.download.outputs.download-path}}/npm-dist.zip
           asset_name: npm-dist-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
+
+
+  dist_cdn:
+    name: "Put dist on the CDN"
+    needs:
+      - tag_and_release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+
+      #
+      # Step 1
+      #
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v2
+        id: download
+        with:
+          name: cdn-dist
+          path: eu-west-2
+
+
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+        - name: Replace latest
+          working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
+          run: |
+            aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
