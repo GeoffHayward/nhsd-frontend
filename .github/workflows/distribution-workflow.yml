@@ -319,7 +319,7 @@ jobs:
 
 
   dist_cdn:
-    name: "Put dist on the CDN"
+    name: "Update CDN with Distribution"
     needs:
       - tag_and_release
     runs-on: ubuntu-latest
@@ -348,4 +348,9 @@ jobs:
       - name: Replace latest
         working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
         run: |
+          ls
           aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
+
+      - name: Create version
+        working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
+        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/${{ jobs.tag_and_release.steps.tag_version.outputs.new_tag }}
