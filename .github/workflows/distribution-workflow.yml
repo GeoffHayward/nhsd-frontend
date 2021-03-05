@@ -351,4 +351,4 @@ jobs:
 
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/todo
+        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/todo --recursive
