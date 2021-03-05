@@ -345,7 +345,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
-        - name: Replace latest
-          working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
-          run: |
-            aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
+      - name: Replace latest
+        working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
+        run: |
+          aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
