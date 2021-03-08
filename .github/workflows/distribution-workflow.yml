@@ -280,6 +280,7 @@ jobs:
       - name: Zip NPM package distribution
         run: |
           echo ${{ steps.tag_version.outputs.new_tag }} > version
+          ls -a
           zip -r ../npm-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
