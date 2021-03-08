@@ -258,7 +258,7 @@ jobs:
       #
       - name: Zip CDN distribution
         run: |
-          ${{ steps.tag_version.outputs.new_tag }} > version
+          echo ${{ steps.tag_version.outputs.new_tag }} > version
           zip -r ../cdn-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
 
@@ -268,7 +268,7 @@ jobs:
       #
       - name: Zip storybook distribution
         run: |
-          ${{ steps.tag_version.outputs.new_tag }} > version
+          echo ${{ steps.tag_version.outputs.new_tag }} > version
           zip -r ../storybook.zip .
         working-directory: ${{steps.download.outputs.download-path}}/storybook-dist
 
@@ -279,7 +279,7 @@ jobs:
       #
       - name: Zip NPM package distribution
         run: |
-          ${{ steps.tag_version.outputs.new_tag }} > version
+          echo ${{ steps.tag_version.outputs.new_tag }} > version
           zip -r ../npm-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
@@ -328,7 +328,7 @@ jobs:
 
 
   dist_cdn:
-    name: "CDN Distribution"
+    name: "Distribute CDN"
     needs:
       - tag_and_release
     runs-on: ubuntu-latest
@@ -354,17 +354,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
-      - name: Replace latest
-        working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
-
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/$(cat version) --recursive
 
+      - name: Replace latest
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
+
+      - name: Refesh CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*"
+
+
 
   dist_storybook:
-    name: "Storybook Distribution"
+    name: "Distribute Storybook"
     needs:
       - tag_and_release
     runs-on: ubuntu-latest
@@ -389,10 +393,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
+      - name: Create version
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 cp . s3://design-system.digital.nhs.uk/storybook/$(cat version) --recursive
+
       - name: Replace latest
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 sync . s3://design-system.digital.nhs.uk/storybook/latest --delete
 
-      - name: Create version
-        working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://design-system.digital.nhs.uk/storybook/$(cat version) --recursive
+      - name: Refesh CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*"
