@@ -148,8 +148,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: storybook-dist
-          path: |
-            storybook-static/
+          path: storybook-static/
 
 
   build_npm_package:
@@ -280,9 +279,20 @@ jobs:
       - name: Zip NPM package distribution
         run: |
           echo ${{ steps.tag_version.outputs.new_tag }} > version
-          ls -a
           zip -r ../npm-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
+
+      #
+      # Step 4
+      # Store version
+      #
+      - name: Write verion to file
+        run: echo ${{ steps.tag_version.outputs.new_tag }} > version
+      - name: Archive version artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: version
+          path: version
 
       #
       # Step 5
@@ -340,12 +350,17 @@ jobs:
       #
       # Step 1
       #
-      - name: Download all workflow artifacts
+      - name: Download CDN artifacts
         uses: actions/download-artifact@v2
         id: download
         with:
           name: cdn-dist
-          path: eu-west-2
+          path: cdn-dist
+      - name: Download version artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: version
+          path: cdn-dist
 
 
       - name: Configure AWS credentials from Test account
@@ -385,7 +400,12 @@ jobs:
         id: download
         with:
           name: storybook-dist
-          path: eu-west-2
+          path: storybook-dist
+      - name: Download version artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: version
+          path: storybook-dist
 
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
