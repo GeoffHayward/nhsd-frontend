@@ -246,25 +246,41 @@ jobs:
       #
       # Step 2
       #
+      - name: Version bump
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: minor
+
+      #
+      # Step 3.1
+      #
       - name: Zip CDN distribution
-        run: zip -r ../cdn-dist.zip .
+        run: |
+          ${{ steps.tag_version.outputs.new_tag }} > version
+          zip -r ../cdn-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/cdn-dist
 
 
       #
-      # Step 3
+      # Step 3.2
       #
       - name: Zip storybook distribution
-        run: zip -r ../storybook.zip .
+        run: |
+          ${{ steps.tag_version.outputs.new_tag }} > version
+          zip -r ../storybook.zip .
         working-directory: ${{steps.download.outputs.download-path}}/storybook-dist
 
 
       #
-      # Step 4
+      # Step 3.3
       # Zip NPM package
       #
       - name: Zip NPM package distribution
-        run: zip -r ../npm-dist.zip .
+        run: |
+          ${{ steps.tag_version.outputs.new_tag }} > version
+          zip -r ../npm-dist.zip .
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
       #
@@ -319,7 +335,7 @@ jobs:
 
 
   dist_cdn:
-    name: "Update CDN with Distribution"
+    name: "CDN Distribution"
     needs:
       - tag_and_release
     runs-on: ubuntu-latest
@@ -351,4 +367,39 @@ jobs:
 
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/todo --recursive
+        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/$(cat version) --recursive
+
+
+  dist_storybook:
+    name: "Storybook Distribution"
+    needs:
+      - tag_and_release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+
+      #
+      # Step 1
+      #
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v2
+        id: download
+        with:
+          name: storybook-dist
+          path: eu-west-2
+
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Replace latest
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 sync . s3://design-system.digital.nhs.uk/storybook/latest --delete
+
+      - name: Create version
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 cp . s3://design-system.digital.nhs.uk/storybook/$(cat version) --recursive
