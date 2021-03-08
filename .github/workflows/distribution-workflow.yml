@@ -286,16 +286,9 @@ jobs:
       #
       # Step 5
       # Create Release
-      # - Bumps version
       # - Adds version release tag
       # - Adds dist, storybook and package to the release
       #
-      - name: Version bump
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v5.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: minor
       - uses: actions/create-release@v1
         id: create_release
         env:
